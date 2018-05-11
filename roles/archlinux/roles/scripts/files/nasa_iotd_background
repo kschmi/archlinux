@@ -1,0 +1,28 @@
+#!/bin/bash
+set_awesome_background() {
+    theme="$1"
+    wallpaper="$2"
+    printf "Theme: %s\nWallpaper: %s\n" $theme $wallpaper
+    sed -i 's|^theme.wallpaper = ".*"$|theme.wallpaper = "'$wallpaper'"|' /usr/share/awesome/themes/${theme}/theme.lua
+}
+
+get_nasa_iotd() {
+    iotd_number="$1"
+    img_dir="${HOME}/Pictures"
+    rss=$(wget -q -O - http://www.nasa.gov/rss/lg_image_of_the_day.rss)
+    img_url=$(echo $rss | grep -o '<enclosure [^>]*>' | grep -o 'http://[^\"]*' | head -n $iotd_number | tail -n 1)
+    img_name=$(echo $img_url | grep -o [^/]*\.\w*$)
+    img_file="${img_dir}/${img_name}"
+    
+    # this command is benign if the directory already exists.
+    mkdir -p ${img_dir}
+        
+    # this command will overwrite the image if it already exists
+    wget -q -O ${img_file} $img_url
+
+    printf "$img_file"
+}
+
+NASA_IOTD_NUMBER=${1:-1}
+NASA_IOTD_FILE=$(get_nasa_iotd $NASA_IOTD_NUMBER)
+set_awesome_background kschmi $NASA_IOTD_FILE

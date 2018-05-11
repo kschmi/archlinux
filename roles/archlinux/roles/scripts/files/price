@@ -1,0 +1,93 @@
+#!/bin/bash
+
+get_page() {
+    local target="$1"
+    local url="$2"
+
+    tput sc
+    echo -en "Loading $url"
+
+    local counter=0
+    local return=1
+    while [[ $return -ne 0 && $counter -lt 10 ]]; do
+        #wget --referer="http://www.google.com" \
+        #        --user-agent="Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.6) Gecko/20070725 Firefox/2.0.0.6" \
+        #        --header="Accept: text/html" \
+        #        --header="Accept-Language: en-us,en;q=0.5" \
+        #        --header="Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7" \
+        #        --header="Keep-Alive: 300" \
+        #        -O $target $url
+        curl "$url" \
+            -H 'Accept-Encoding: gzip, deflate, sdch, br' \
+            -H 'Accept-Language: en-GB,en;q=0.8,en-US;q=0.6,de;q=0.4,af;q=0.2' \
+            -H 'Upgrade-Insecure-Requests: 1' \
+            -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.94 Safari/537.36' \
+            -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' \
+            -H 'Cache-Control: max-age=0' \
+            -H 'Avail-Dictionary: Klxuwe8e' \
+            -H 'Cookie: x-wl-uid=1SwRhLrTGoRm5+EPY1H1xE5pk+HqdwvRM1lBaQI4eQ1gzGa9lBXd19M713yVY+kCCLgeFtmxa98lbse1YouJYhAyvOX/NP66xOeEdkCtw9ShJLybiecyO0LBQoIsgwW8zzWFuL5q/QUE=; s_nr=1471239098528-Repeat; s_vnum=1895491557107%26vn%3D2; s_dslv=1471239098531; amznacsleftnav-209919287=1; at-acbde=Atza|IwEBIAyd_O3aI7vng-byFON6IdtWuUQXDeQUmEkHQpKR56J_dz1zsqOaPPjGblKGVvUaCd60I8vdt4u9ytTF0iVtIVtjp_AqibWOu56X12WuDKIdpuCL-SQO_kz5XhUXWaaTIksZOWVU5v21-81isPk4IysQuOnt_W6qBWB_TwAYWZusjeu3yYK4i7aCnL5DWCpt6gn94qKkjyfGCworzTDdAWeg2Cf_MajylleAfVyLhuDlkEGZejkLlKzpRUGqM45MpDXjMuFs-cJ-zuhUmhw-1YN1o8hSO2mIi7bz3DRLWNADM2qoRdT6XazUhh_C9a488-tj_SI4I6uLzqUgtVkL-LQHcVdMI9WdwieKbdHTuJU915lf-2Qex8xNXNhzIDEqdnhWuFUoXOpX9M90JwDJSx7S; x-acbde=e1GFYTtwxMIUy8GR21NVTfJ6zSjd2W4L; session-token="EI2oExFTdKnhLARev3EYfQras/AUHS7ILgTQcgVeQOfr6N4jKclNTNBYgBnIzfnO9MBhO1ZF7VKmQvdVACdPv/mBrO9IgRFqEOqiiWwDqV5sqnWkggoMHGAdIIRQ4KHSJ6+5UfKW1K8XwgbFBjJbt+cDCW2RkooIxj0JMGcVnOIN/T1iVh7sBc5OScIH03iamiG+5baDsLNO71JGTCJ5gfXy5qM/oMAbzsv+AQDOSJs="; lc-acbde=de_DE; session-id-time=2082754801l; session-id=277-6000190-6512707; ubid-acbde=280-2082349-5445529; csm-hit=BJVP9E4MHKGVRA0J4JBS+s-V3FZJQ8G686S11ECE54F|1476339919990' \
+            -H 'Connection: keep-alive' \
+            --silent --compressed -o $target
+        return=$?
+        ((counter++))
+        echo -n "."
+        sleep 1
+    done
+
+    if [ $return -eq 0 ]; then
+        tput rc
+        tput ed
+    else
+        echo " $return"
+    fi
+}
+
+print_low_prices() {
+    local price_list="$1"
+    local max_price="$2"
+
+    for price in $price_list; do
+        if [ $(echo "$price < $max_price" | bc) -eq 1 ]; then
+            echo $price
+        fi
+    done
+}
+
+get_prices() {
+    local product_id="$1"
+    local max_price="${2:-20}"
+
+    local url="https://www.amazon.de/gp/offer-listing/${product_id}"
+    local tmp_page="/tmp/amazon.html"
+
+    get_page "$tmp_page" "$url"
+
+    grep --colour "<h1" $tmp_page | sed "s/.*>\(.*\)<\/h1>/\1/" | sed -r "s/ {2,}/ /g" | sed "s/^ //"
+
+    prices=$(grep "EUR" $tmp_page | grep -vi "shipping" | grep "olpOfferPrice" | grep "olpOfferPrice" | sed "s/.*>\(.*\)<\/span>/\1/" | sed -r "s/ {2,}//" | sed "s/EUR \(.*\)/\1/" |  sed "s/,/./" | head -n 4)
+    print_low_prices "$prices" "$max_price"
+
+    rm $tmp_page
+}
+
+echo "--------- D & D ----------"
+get_prices 0786965622      # Dungeon Master's Guide
+get_prices 0786965614 20   # Monster Manuel
+get_prices 1945625317 40   # Spielerhandbuch
+get_prices 0786965606      # Player's Handbook
+#get_prices 0786965657 15
+#get_prices 0786965649 15
+#get_prices 0786965983
+#get_prices 0786965800
+echo "--------- WHAOS ----------"
+get_prices 1785812882 10   # Disciples of Tzeentch
+get_prices 1785818872 10   # Kharadron Overlord
+echo "----------- SR5 -----------"
+get_prices 3941976974 10    # Straßengrimoire
+get_prices 395789042X 10    # Bodyshop
+get_prices 3957890497 10    # Asphaltkrieger
+get_prices 3957890055 10    # Schattenläufer
+get_prices 3941976958 10    # Kreuzfeuer
+get_prices 3957890004 10    # Datenpfade
+echo "------- Board Games--------"
+get_prices B001BAWO3Y 30

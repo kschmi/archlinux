@@ -1,0 +1,88 @@
+#!/bin/bash
+volume_current() {
+    volume=$(amixer sget Master | grep  -Eo -m 1 "\[[0-9]{1,3}%\]" | sed  -e 's/\[\([0-9]\{1,3\}\)%\]/\1/')
+    printf "$volume"
+}
+
+volume_status() {
+    status=$(amixer sget Master | grep  -Eo -m 1 "\[(on|off)\]" | sed 's/\[//' | sed 's/\]//')
+    printf "$status"
+}
+
+volume_icon() {
+    icon_path='/usr/share/icons/HighContrast/24x24/status'
+
+    if [ $(volume_status) = 'on' ]; then
+        if [ $(volume_current) -lt 40 ]; then
+            icon_file='audio-volume-low.png'
+        elif [ $(volume_current) -lt 80 ]; then
+            icon_file='audio-volume-medium.png'
+        else
+            icon_file='audio-volume-high.png'
+        fi
+    elif [ $(volume_status) = "off" ]; then
+        icon_file='audio-volume-muted.png'
+    fi
+
+    printf "${icon_path}/${icon_file}"
+}
+
+play_sound() {
+    paplay /usr/share/sounds/gnome/default/alerts/glass.ogg &
+}
+
+notify_current_volume(){
+    notify-send -i $(volume_icon) "Audio at $(volume_current)%"
+}
+
+sound_on() {
+    amixer set Master unmute
+    notify_current_volume
+    play_sound
+}
+
+sound_off() {
+    amixer set Master mute
+    notify-send -i $(volume_icon) 'Audio off'
+}
+
+sound_up() {
+
+    if [ $(volume_status) = 'off' ]; then
+        sound_on
+    else
+        new_volume="$(($(volume_current)+$VOLUME_INCREMENT))%"
+        amixer set Master ${new_volume}
+        notify_current_volume
+        play_sound
+    fi
+}
+
+sound_down() {
+    if [ $(volume_status) = 'off' ]; then
+        sound_on
+    else
+        new_volume="$(($(volume_current)-$VOLUME_INCREMENT))%"
+        amixer set Master ${new_volume}
+        notify_current_volume
+        play_sound
+    fi
+}
+
+VOLUME_INCREMENT=10
+
+if [ "$1" = "on" ]; then
+    sound_on
+elif [ "$1" = "off" ]; then
+    sound_off
+elif [ "$1" = "up" ]; then
+    sound_up
+elif [ "$1" = "down" ]; then
+    sound_down
+elif [[ "$1" =~ ^[0-9]{1,3}$ ]]; then
+    amixer set Master ${1}%
+    notify_current_volume
+    play_sound
+else
+    echo "Usage: audio [on/off/up/down/volume in %]"
+fi

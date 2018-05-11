@@ -1,0 +1,1 @@
+mono --verify-all /opt/KeePass2/KeePass.exe

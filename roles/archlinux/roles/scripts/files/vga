@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Welcher ext. Ausgang ist angeschlossen?
+# LVDS ist der interne, der ist immer connected.
+AUSGANG=`xrandr | grep " connected " | grep -v LVDS | cut -d" " -f 1`
+
+echo using $AUSGANG
+
+if [ "$1" == "off" ]; then
+   xrandr --output ${AUSGANG} --off
+   xrandr --output LVDS1 --preferred
+fi
+if [ "$1" == "on" ]; then
+   xrandr --output ${AUSGANG} --preferred
+fi
+if [ "$1" == "only" ]; then
+   $0 on
+   xrandr --output LVDS1 --off
+fi
