@@ -1,0 +1,47 @@
+execute pathogen#infect()
+
+" NERDTree
+" CTRL + N Shortcut
+map <C-n> :NERDTreeToggle<CR>
+" <C-p> opens FZF
+nnoremap <C-p> :FZF<CR>
+" Close NERDTree if its the last open window
+autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTreeType") && b:NERDTreeType == "primary") | q | endif
+
+"Powerline
+"set rtp+=/home/kschmi/.local/lib/python3.3/site-packages/powerline/bindings/vim
+set rtp+=/home/kschmi/git/other/powerline/powerline/bindings/vim
+set laststatus=2
+set noshowmode
+
+set smartindent
+set tabstop=4
+set shiftwidth=4
+set expandtab
+colorscheme molokai
+syntax on
+let g:molokai_original = 1
+let g:rehash256 = 1
+set t_Co=256
+set number
+hi Normal ctermbg=none
+hi NonText ctermbg=none
+hi LineNr ctermbg=none
+
+"cursorline makes vim slow on medium large files :(
+set cursorline
+
+"gvim
+set guioptions=
+set guifont=Ubuntu\ Mono\ derivative\ Powerline\ 12
+set noerrorbells visualbell t_vb=
+
+let g:validator_python_checkers = ['flake8']
+
+" goto last location in non-empty files
+autocmd BufReadPost *
+   \ if line("'\"") > 1 && line("'\"") <= line("$")
+   \ | exe "normal! g`\""
+   \ | endif
+
+
