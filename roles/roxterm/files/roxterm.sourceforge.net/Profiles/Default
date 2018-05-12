@@ -1,0 +1,10 @@
+[roxterm profile]
+saturation=1.000000
+show_add_tab_btn=0
+always_show_tabs=0
+scrollbar_pos=0
+colour_scheme=Tango02
+font=Droid Sans Mono for Powerline 10
+width=90
+hide_menubar=1
+height=30

@@ -1,0 +1,121 @@
+# .bashrc
+
+function apb() {
+    command="$@"
+    echo "Command: $command"
+    ansible-playbook -i environments/${command}
+}
+
+chromium-browser() {
+    chrome "$@"
+}
+function kcs() {
+    echo $@
+    ssh pi@kschmi-pi.lan.tarent.de "kc sound $@"
+}
+function kc() {
+    echo $@
+    ssh pi@kschmi-pi.lan.tarent.de "kc $@"
+}
+export -f chromium-browser
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+	. /etc/bashrc
+fi
+
+# User specific aliases and functions
+#alias tmux='tmux -2'
+alias vi='vim'
+#alias apb='ansible-playbook -i environments/'
+alias ls="ls --color"
+alias dc="rhc ssh -n devicecloud"
+alias gear-show="rhc app-show --gears -n devicecloud"
+alias cdgit="cd /home/kschmi/scm/git/tsystems"
+alias notify="notify-send 'Noification'; paplay /usr/share/sounds/gnome/default/alerts/glass.ogg"
+
+
+set -o vi
+
+OPENSHIFT_GIT='/home/kschmi/scm/git/local/utilities/openshift'
+#alias osref="${OPENSHIFT_GIT}/refresh.sh"
+#alias osass=". ${OPENSHIFT_GIT}/assign.sh"
+#
+#osmcon() {
+#    GEARTYPE="$1"
+#    APPNAME="$2"
+#    nohup ${OPENSHIFT_GIT}/connect.sh $GEARTYPE $APPNAME &
+#}
+#
+#. ~/scm/git/local/utilities/openshift/assign.sh
+
+
+#PS1_START="\[\e[00;37m\][\[\e[0m\]\[\e[01;32m\]\u\[\e[0m\]\[\e[00;37m\]@\[\e[0m\]\[\e[01;36m\]\h\[\e[0m\]\[\e[00;37m\] \W]\[\e[0m\]"
+#PS1_END="\[\e[01;37m\]\\$\[\e[0m\]\[\e[00;37m\]\[\e[0m\] "
+#export PS1="${PS1_START}${PS1_END}"
+
+export JAVA_HOME="/usr/lib/jvm/java-7-openjdk/jre/"
+export PATH="${PATH}:${HOME}/bin"
+export PATH="${PATH}:${HOME}/.rvm/bin" # Add RVM to PATH for scripting
+export PATH="${PATH}:${HOME}/.gem/ruby/2.3.0/bin/"
+export ANSIBLE_VAULT_PASSWORD_FILE=~/.vault_pass.txt
+
+
+#if [ ! "$TERM" = "screen-256color" ] && [ ! "$TERM" = "screen" ]; then
+#    eval $(ssh-agent)
+#    tmux
+#fi
+
+# get current branch in git repo
+function parse_git_branch() {
+	BRANCH=`git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'`
+	if [ ! "${BRANCH}" == "" ]
+	then
+		STAT=`parse_git_dirty`
+		echo "${BRANCH}${STAT} "
+	else
+		echo ""
+	fi
+}
+
+####
+# Prompt
+####
+
+# get current status of git repo
+function parse_git_dirty {
+	status=`git status 2>&1 | tee`
+	dirty=`echo -n "${status}" 2> /dev/null | grep "modified:" &> /dev/null; echo "$?"`
+	untracked=`echo -n "${status}" 2> /dev/null | grep "Untracked files" &> /dev/null; echo "$?"`
+	ahead=`echo -n "${status}" 2> /dev/null | grep "Your branch is ahead of" &> /dev/null; echo "$?"`
+	newfile=`echo -n "${status}" 2> /dev/null | grep "new file:" &> /dev/null; echo "$?"`
+	renamed=`echo -n "${status}" 2> /dev/null | grep "renamed:" &> /dev/null; echo "$?"`
+	deleted=`echo -n "${status}" 2> /dev/null | grep "deleted:" &> /dev/null; echo "$?"`
+	bits=''
+	if [ "${renamed}" == "0" ]; then
+		bits=">${bits}"
+	fi
+	if [ "${ahead}" == "0" ]; then
+		bits="*${bits}"
+	fi
+	if [ "${newfile}" == "0" ]; then
+		bits="+${bits}"
+	fi
+	if [ "${untracked}" == "0" ]; then
+		bits="?${bits}"
+	fi
+	if [ "${deleted}" == "0" ]; then
+		bits="x${bits}"
+	fi
+	if [ "${dirty}" == "0" ]; then
+		bits="!${bits}"
+	fi
+	if [ ! "${bits}" == "" ]; then
+		echo " ${bits}"
+	else
+		echo ""
+	fi
+}
+
+export PS1="\[\e[35m\]\w\[\e[m\] \[\e[32m\]\`parse_git_branch\`\[\e[m\]\[\e[36m\]\\$\[\e[m\] \n "
+
